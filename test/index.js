@@ -59,17 +59,6 @@ describe('Now', function tests() {
     })
   })
 
-  it('should retrieve deployments via callback', done => {
-    now.getDeployments((err, data) => {
-      if (err) {
-        throw new Error(err.message)
-      }
-
-      data.should.be.an('array')
-      return done()
-    })
-  })
-
   it('should retrieve single deployment', done => {
     now.getDeployment(instanceId)
     .then(data => {
@@ -129,17 +118,6 @@ describe('Now', function tests() {
       done()
     }).catch(err => {
       throw new Error(err.message)
-    })
-  })
-
-  it('should retrieve aliases via callback', done => {
-    now.getAliases((err, data) => {
-      if (err) {
-        throw new Error(err.message)
-      }
-
-      data.should.be.an('array')
-      return done()
     })
   })
 

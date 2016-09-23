@@ -84,31 +84,21 @@ function Now(token = _getToken()) {
 }
 
 Now.prototype = {
-  // Checks if callback is present and fires it
-  handleCallback: function handleCallback(callback, err, data) {
-    if (typeof callback === 'function') {
-      callback(err, data)
-    }
-  },
-
-  // Handles errors with Promise and callback support
-  handleError: function handleError(err, callback) {
+  // Handles errors with Promise
+  handleError: function handleError(err) {
     return new Promise((resolve, reject) => {
       reject(err)
-      this.handleCallback(callback, err)
     })
   },
 
   // Processes requests
-  handleRequest: function handleRequest(config, callback, selector) {
+  handleRequest: function handleRequest(config, selector) {
     return new Promise((resolve, reject) => {
       this.axios.request(config)
         .then(res => {
           const data = selector ? res.data[selector] : res.data
           resolve(data)
-          this.handleCallback(callback, undefined, data)
         })
-
         .catch(err => {
           let errData
           if (err.data && err.data.err) {
@@ -119,7 +109,6 @@ Now.prototype = {
             errData = err.toString()
           }
           reject(errData)
-          this.handleCallback(callback, errData)
         })
     })
   },
@@ -127,32 +116,30 @@ Now.prototype = {
   /**
    * Returns an array with all deployments.
    * @return {Promise}
-   * @param  {Function} [callback]     Callback will be called with `(err, deployments)`
    * @see https://zeit.co/api#list-endpoint
    */
-  getDeployments: function getDeployments(callback) {
+  getDeployments: function getDeployments() {
     return this.handleRequest({
       url: '/deployments',
       method: 'get'
-    }, callback, 'deployments')
+    }, 'deployments')
   },
 
   /**
    * Returns an object with deployment data.
    * @return {Promise}
    * @param  {String} id     ID of deployment
-   * @param  {Function} [callback]     Callback will be called with `(err, deployment)`
    * @see https://zeit.co/api#get-endpoint
    */
-  getDeployment: function getDeployment(id, callback) {
+  getDeployment: function getDeployment(id) {
     if (!id) {
-      return this.handleError(ERROR.MISSING_ID, callback)
+      return this.handleError(ERROR.MISSING_ID)
     }
 
     return this.handleRequest({
       url: `/deployments/${id}`,
       method: 'get'
-    }, callback)
+    })
   },
 
   /**
@@ -161,59 +148,56 @@ Now.prototype = {
    * @param  {Object} body     Object a package key (for package.json data).
    * The other keys should represent a file path, with their respective values
    * containing the file contents.
-   * @param  {Function} [callback]     Callback will be called with `(err, deployment)`
    * @see https://zeit.co/api#instant-endpoint
    */
-  createDeployment: function createDeployment(body, callback) {
+  createDeployment: function createDeployment(body) {
     if (!body) {
-      return this.handleError(ERROR.MISSING_BODY, callback)
+      return this.handleError(ERROR.MISSING_BODY)
     }
 
     if (!body.package) {
-      return this.handleError(ERROR.MISSING_PACKAGE, callback)
+      return this.handleError(ERROR.MISSING_PACKAGE)
     }
 
     return this.handleRequest({
       url: '/deployments',
       method: 'post',
       data: body
-    }, callback)
+    })
   },
 
   /**
    * Deletes a deployment and returns its data.
    * @return {Promise}
    * @param  {String} id     ID of deployment
-   * @param  {Function} [callback]     Callback will be called with `(err, deployment)`
    * @see https://zeit.co/api#rm-endpoint
    */
-  deleteDeployment: function deleteDeployment(id, callback) {
+  deleteDeployment: function deleteDeployment(id) {
     if (!id) {
-      return this.handleError(ERROR.MISSING_ID, callback)
+      return this.handleError(ERROR.MISSING_ID)
     }
 
     return this.handleRequest({
       url: `/deployments/${id}`,
       method: 'delete'
-    }, callback)
+    })
   },
 
   /**
    * Returns an array with the file structure.
    * @return {Promise}
    * @param  {String} id     ID of deployment
-   * @param  {Function} [callback]     Callback will be called with `(err, fileStructure)`
    * @see https://zeit.co/api#file-structure-endpoint
    */
-  getFiles: function getFiles(id, callback) {
+  getFiles: function getFiles(id) {
     if (!id) {
-      return this.handleError(ERROR.MISSING_ID, callback)
+      return this.handleError(ERROR.MISSING_ID)
     }
 
     return this.handleRequest({
       url: `/deployments/${id}/files`,
       method: 'get'
-    }, callback)
+    })
   },
 
   /**
@@ -221,45 +205,34 @@ Now.prototype = {
    * @return {Promise}
    * @param  {String} id     ID of deployment
    * @param  {String} fileId     ID of the file
-   * @param  {Function} [callback]     Callback will be called with `(err, fileContent)`
    * @see https://zeit.co/api#file--endpoint
    */
-  getFile: function getFile(id, fileId, callback) {
+  getFile: function getFile(id, fileId) {
     if (!id) {
-      return this.handleError(ERROR.MISSING_ID, callback)
+      return this.handleError(ERROR.MISSING_ID)
     }
 
     if (!fileId) {
-      return this.handleError(ERROR.MISSING_FILE_ID, callback)
+      return this.handleError(ERROR.MISSING_FILE_ID)
     }
 
     return this.handleRequest({
       url: `/deployments/${id}/files/${fileId}`,
       method: 'get'
-    }, callback)
+    })
   },
 
   /**
    * Returns an array with all aliases.
    * @return {Promise}
-   * @param  {String|Function} [id OR callback]     ID of deployment or callback
-   * @param  {Function} [callback]     Callback will be called with `(err, aliases)`
+   * @param  {String|Function} [id]     ID of deployment
    * @see https://zeit.co/api#user-aliases
    */
-  getAliases: function getAliases(id, callback) {
-    let url = '/aliases'
-    let _callback = callback /* eslint no-underscore-dangle: 0 */
-
-    if (typeof id === 'function') {
-      _callback = id
-    } else if (typeof id === 'string') {
-      url = `/deployments/${id}/aliases`
-    }
-
+  getAliases: function getAliases(id) {
     return this.handleRequest({
-      url,
+      url: `/deployments/${id}/aliases`,
       method: 'get'
-    }, _callback, 'aliases')
+    }, 'aliases')
   },
 
   /**
@@ -267,16 +240,15 @@ Now.prototype = {
    * @return {Promise}
    * @param  {String} id     ID of deployment
    * @param  {String} alias     Hostname or custom url for the alias
-   * @param  {Function} [callback]     Callback will be called with `(err, data)`
    * @see https://zeit.co/api#create-alias
    */
-  createAlias: function createAlias(id, alias, callback) {
+  createAlias: function createAlias(id, alias) {
     if (!id) {
-      return this.handleError(ERROR.MISSING_ID, callback)
+      return this.handleError(ERROR.MISSING_ID)
     }
 
     if (!alias) {
-      return this.handleError(ERROR.MISSING_ALIAS, callback)
+      return this.handleError(ERROR.MISSING_ALIAS)
     }
 
     return this.handleRequest({
@@ -285,39 +257,37 @@ Now.prototype = {
       data: {
         alias
       }
-    }, callback)
+    })
   },
 
   /**
    * Deletes an alias and returns a status.
    * @return {Promise}
    * @param  {String} id     ID of alias
-   * @param  {Function} [callback]     Callback will be called with `(err, status)`
    * @see https://zeit.co/api#delete-user-aliases
    */
-  deleteAlias: function deleteAlias(id, callback) {
+  deleteAlias: function deleteAlias(id) {
     if (!id) {
-      return this.handleError(ERROR.MISSING_ID, callback)
+      return this.handleError(ERROR.MISSING_ID)
     }
 
     return this.handleRequest({
       url: `/aliases/${id}`,
       method: 'delete'
-    }, callback)
+    })
   },
 
   /**
    * Returns an array with all secrets.
    * @return {Promise}
-   * @param  {String|Function} [id OR callback]     ID of deployment or callback
-   * @param  {Function} [callback]     Callback will be called with `(err, secrets)`
+   * @param  {String} [id]     ID of deployment
    * @see https://zeit.co/api#get-now-secrets
    */
-  getSecrets: function getSecrets(callback) {
+  getSecrets: function getSecrets() {
     return this.handleRequest({
       url: '/secrets',
       method: 'get'
-    }, callback, 'secrets')
+    }, 'secrets')
   },
 
   /**
@@ -325,16 +295,15 @@ Now.prototype = {
    * @return {Promise}
    * @param  {String} name     name for the secret
    * @param  {String} value     value for the secret
-   * @param  {Function} [callback]     Callback will be called with `(err, data)`
    * @see https://zeit.co/api#post-now-secrets
    */
-  createSecret: function createSecret(name, value, callback) {
+  createSecret: function createSecret(name, value) {
     if (!name) {
-      return this.handleError(ERROR.MISSING_NAME, callback)
+      return this.handleError(ERROR.MISSING_NAME)
     }
 
     if (!value) {
-      return this.handleError(ERROR.MISSING_VALUE, callback)
+      return this.handleError(ERROR.MISSING_VALUE)
     }
 
     return this.handleRequest({
@@ -344,7 +313,7 @@ Now.prototype = {
         name,
         value
       }
-    }, callback)
+    })
   },
 
   /**
@@ -352,16 +321,15 @@ Now.prototype = {
    * @return {Promise}
    * @param  {String} id     id or name of the secret
    * @param  {String} name     new name for the secret
-   * @param  {Function} [callback]     Callback will be called with `(err, data)`
    * @see https://zeit.co/api#patch-now-secrets
    */
-  renameSecret: function renameSecret(id, name, callback) {
+  renameSecret: function renameSecret(id, name) {
     if (!id) {
-      return this.handleError(ERROR.MISSING_ID, callback)
+      return this.handleError(ERROR.MISSING_ID)
     }
 
     if (!name) {
-      return this.handleError(ERROR.MISSING_NAME, callback)
+      return this.handleError(ERROR.MISSING_NAME)
     }
 
     return this.handleRequest({
@@ -370,25 +338,24 @@ Now.prototype = {
       data: {
         name
       }
-    }, callback)
+    })
   },
 
   /**
    * Deletes a secret and returns its ID.
    * @return {Promise}
    * @param  {String} id     ID or name of the secret
-   * @param  {Function} [callback]     Callback will be called with `(err, status)`
    * @see https://zeit.co/api#delete-user-aliases
    */
-  deleteSecret: function deleteSecret(id, callback) {
+  deleteSecret: function deleteSecret(id) {
     if (!id) {
-      return this.handleError(ERROR.MISSING_ID, callback)
+      return this.handleError(ERROR.MISSING_ID)
     }
 
     return this.handleRequest({
       url: `/secrets/${id}`,
       method: 'delete'
-    }, callback)
+    })
   }
 }
 
