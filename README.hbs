@@ -34,6 +34,21 @@ try {
 console.log(deployments)
 ```
 
+### Older ES
+
+
+```js
+const nowClient = require('now-client')
+const now = nowClient('YOUR TOKEN')
+
+// Supports Promises
+now.getDeployments().then(deployments => {
+  console.log(deployments)
+}).catch(err => {
+  console.error(err)
+})
+```
+
 ## API Reference
 
 {{#class name="Now"~}}
