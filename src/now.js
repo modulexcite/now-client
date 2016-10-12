@@ -115,7 +115,7 @@ Now.prototype = {
 
   /**
    * Returns an array with all deployments.
-   * @return {Promise}
+   * @return {Promise} resolves with `(deployments)`
    * @see https://zeit.co/api#list-endpoint
    */
   getDeployments: function getDeployments() {
@@ -127,7 +127,7 @@ Now.prototype = {
 
   /**
    * Returns an object with deployment data.
-   * @return {Promise}
+   * @return {Promise} resolves with `(deployment)`
    * @param  {String} id     ID of deployment
    * @see https://zeit.co/api#get-endpoint
    */
@@ -144,7 +144,7 @@ Now.prototype = {
 
   /**
    * Creates a new deployment and returns its data.
-   * @return {Promise}
+   * @return {Promise} resolves with `(deployment)`
    * @param  {Object} body     Object a package key (for package.json data).
    * The other keys should represent a file path, with their respective values
    * containing the file contents.
@@ -168,7 +168,7 @@ Now.prototype = {
 
   /**
    * Deletes a deployment and returns its data.
-   * @return {Promise}
+   * @return {Promise} resolves with `(deployment)`
    * @param  {String} id     ID of deployment
    * @see https://zeit.co/api#rm-endpoint
    */
@@ -185,7 +185,7 @@ Now.prototype = {
 
   /**
    * Returns an array with the file structure.
-   * @return {Promise}
+   * @return {Promise} resolves with `(fileStructure)`
    * @param  {String} id     ID of deployment
    * @see https://zeit.co/api#file-structure-endpoint
    */
@@ -202,7 +202,7 @@ Now.prototype = {
 
   /**
    * Returns the content of a file either as string or object, depending on the filetype.
-   * @return {Promise}
+   * @return {Promise} resolves with `(fileContent)`
    * @param  {String} id     ID of deployment
    * @param  {String} fileId     ID of the file
    * @see https://zeit.co/api#file--endpoint
@@ -224,7 +224,7 @@ Now.prototype = {
 
   /**
    * Returns an array with all aliases.
-   * @return {Promise}
+   * @return {Promise} resolves with `(aliases)`
    * @param  {String|Function} [id]     ID of deployment
    * @see https://zeit.co/api#user-aliases
    */
@@ -237,7 +237,7 @@ Now.prototype = {
 
   /**
    * Creates an alias for the given deployment.
-   * @return {Promise}
+   * @return {Promise} resolves with `(data)`
    * @param  {String} id     ID of deployment
    * @param  {String} alias     Hostname or custom url for the alias
    * @see https://zeit.co/api#create-alias
@@ -262,7 +262,7 @@ Now.prototype = {
 
   /**
    * Deletes an alias and returns a status.
-   * @return {Promise}
+   * @return {Promise} resolves with `(status)`
    * @param  {String} id     ID of alias
    * @see https://zeit.co/api#delete-user-aliases
    */
@@ -279,7 +279,7 @@ Now.prototype = {
 
   /**
    * Returns an array with all secrets.
-   * @return {Promise}
+   * @return {Promise} resolves with `(secrets)`
    * @param  {String} [id]     ID of deployment
    * @see https://zeit.co/api#get-now-secrets
    */
@@ -292,7 +292,7 @@ Now.prototype = {
 
   /**
    * Creates a secret and returns its ID.
-   * @return {Promise}
+   * @return {Promise} resolves with `(data)`
    * @param  {String} name     name for the secret
    * @param  {String} value     value for the secret
    * @see https://zeit.co/api#post-now-secrets
@@ -318,7 +318,7 @@ Now.prototype = {
 
   /**
    * Changes the name of the given secret and returns its ID and name.
-   * @return {Promise}
+   * @return {Promise} resolves with `(data)`
    * @param  {String} id     id or name of the secret
    * @param  {String} name     new name for the secret
    * @see https://zeit.co/api#patch-now-secrets
@@ -343,7 +343,7 @@ Now.prototype = {
 
   /**
    * Deletes a secret and returns its ID.
-   * @return {Promise}
+   * @return {Promise} resolves with `(status)`
    * @param  {String} id     ID or name of the secret
    * @see https://zeit.co/api#delete-user-aliases
    */
