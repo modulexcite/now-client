@@ -1,7 +1,7 @@
 const path = require('path')
 const os = require('os')
 
-const axios = require('axios')
+const request = require('request-promise-native')
 
 const ERROR = {
   MISSING_ID: {
@@ -16,9 +16,9 @@ const ERROR = {
     code: 'missing_body',
     message: 'Missing `body` parameter'
   },
-  MISSING_PACKAGE: {
-    code: 'missing_package',
-    message: 'Missing `package` object in body'
+  MISSING_CN: {
+    code: 'missing_cn',
+    message: 'Missing `cn` parameter'
   },
   MISSING_ALIAS: {
     code: 'missing_body',
@@ -45,7 +45,7 @@ function _getToken() {
   if (!token) {
     try {
       const configPath = path.join(os.homedir(), '.now.json')
-      token = require(configPath).token // eslint-disable-line global-require
+      token = require(configPath).token // eslint-disable-line global-require, import/no-dynamic-require
     } catch (err) {
       console.error(`Error: ${err}`)
     }
@@ -64,7 +64,7 @@ function Now(token = _getToken()) {
     return console.error(
       'No token found! ' +
       'Supply it as argument or use the NOW_TOKEN env variable. ' +
-      '"~/.now.json" will be used, if it\'s found in your home directory.'
+      '`~/.now.json` will be used, if it\'s found in your home directory.'
     )
   }
 
@@ -74,9 +74,10 @@ function Now(token = _getToken()) {
 
   this.token = token
 
-  this.axios = axios.create({
-    baseURL: 'https://api.zeit.co/now',
+  this.request = request.defaults({
+    baseUrl: 'https://api.zeit.co/now',
     timeout: 30000,
+    json: true,
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -84,19 +85,19 @@ function Now(token = _getToken()) {
 }
 
 Now.prototype = {
-  // Handles errors with Promise
-  handleError: function handleError(err) {
+  // Handles errors with a Promise
+  handleError(err) {
     return new Promise((resolve, reject) => {
       reject(err)
     })
   },
 
   // Processes requests
-  handleRequest: function handleRequest(config, selector) {
+  handleRequest(config, selector) {
     return new Promise((resolve, reject) => {
-      this.axios.request(config)
+      this.request(config)
         .then(res => {
-          const data = selector ? res.data[selector] : res.data
+          const data = selector ? res[selector] : res
           resolve(data)
         })
         .catch(err => {
@@ -115,10 +116,10 @@ Now.prototype = {
 
   /**
    * Returns an array with all deployments.
-   * @return {Promise} resolves with `(deployments)`
+   * @return {Promise}
    * @see https://zeit.co/api#list-endpoint
    */
-  getDeployments: function getDeployments() {
+  getDeployments() {
     return this.handleRequest({
       url: '/deployments',
       method: 'get'
@@ -127,11 +128,11 @@ Now.prototype = {
 
   /**
    * Returns an object with deployment data.
-   * @return {Promise} resolves with `(deployment)`
+   * @return {Promise}
    * @param  {String} id     ID of deployment
    * @see https://zeit.co/api#get-endpoint
    */
-  getDeployment: function getDeployment(id) {
+  getDeployment(id) {
     if (!id) {
       return this.handleError(ERROR.MISSING_ID)
     }
@@ -144,35 +145,31 @@ Now.prototype = {
 
   /**
    * Creates a new deployment and returns its data.
-   * @return {Promise} resolves with `(deployment)`
-   * @param  {Object} body     Object a package key (for package.json data).
-   * The other keys should represent a file path, with their respective values
+   * @return {Promise}
+   * @param  {Object} body
+   * The keys should represent a file path, with their respective values
    * containing the file contents.
    * @see https://zeit.co/api#instant-endpoint
    */
-  createDeployment: function createDeployment(body) {
+  createDeployment(body) {
     if (!body) {
       return this.handleError(ERROR.MISSING_BODY)
-    }
-
-    if (!body.package) {
-      return this.handleError(ERROR.MISSING_PACKAGE)
     }
 
     return this.handleRequest({
       url: '/deployments',
       method: 'post',
-      data: body
+      body
     })
   },
 
   /**
    * Deletes a deployment and returns its data.
-   * @return {Promise} resolves with `(deployment)`
+   * @return {Promise}
    * @param  {String} id     ID of deployment
    * @see https://zeit.co/api#rm-endpoint
    */
-  deleteDeployment: function deleteDeployment(id) {
+  deleteDeployment(id) {
     if (!id) {
       return this.handleError(ERROR.MISSING_ID)
     }
@@ -185,11 +182,11 @@ Now.prototype = {
 
   /**
    * Returns an array with the file structure.
-   * @return {Promise} resolves with `(fileStructure)`
+   * @return {Promise}
    * @param  {String} id     ID of deployment
    * @see https://zeit.co/api#file-structure-endpoint
    */
-  getFiles: function getFiles(id) {
+  getFiles(id) {
     if (!id) {
       return this.handleError(ERROR.MISSING_ID)
     }
@@ -202,12 +199,12 @@ Now.prototype = {
 
   /**
    * Returns the content of a file either as string or object, depending on the filetype.
-   * @return {Promise} resolves with `(fileContent)`
+   * @return {Promise}
    * @param  {String} id     ID of deployment
    * @param  {String} fileId     ID of the file
    * @see https://zeit.co/api#file--endpoint
    */
-  getFile: function getFile(id, fileId) {
+  getFile(id, fileId) {
     if (!id) {
       return this.handleError(ERROR.MISSING_ID)
     }
@@ -223,26 +220,178 @@ Now.prototype = {
   },
 
   /**
-   * Returns an array with all aliases.
-   * @return {Promise} resolves with `(aliases)`
-   * @param  {String|Function} [id]     ID of deployment
+   * Returns an array with all domain names and related aliases.
+   * @return {Promise}
+   */
+  getDomains() {
+    return this.handleRequest({
+      url: '/domains',
+      method: 'get'
+    }, 'domains')
+  },
+
+  /**
+   * Adds a new domain and returns its data.
+   * @return {Promise}
+   * @param  {Object} domain           Object with `name` and `isExternalDNS`
+   * If `isExternalDNS` is falsy then an external DNS server should point a
+   * CNAME or an ALIAS  to alias.zeit.co; if `isExternalDNS` is truthy then
+   * zeit.world should be configured as the DNS for the domain.
+   */
+  addDomain(domain) {
+    if (typeof domain.name !== 'string') {
+      return this.handleError(ERROR.MISSING_NAME)
+    }
+
+    return this.handleRequest({
+      url: '/domains',
+      method: 'post',
+      body: {
+        name: domain.name,
+        isExternal: domain.isExternalDNS
+      }
+    })
+  },
+
+  /**
+   * Deletes a domain name.
+   * @return {Promise}
+   * @param  {String} name             Domain name
+   * @see https://zeit.co/api#rm-endpoint
+   */
+  deleteDomain(name) {
+    if (typeof name !== 'string') {
+      return this.handleError(ERROR.MISSING_NAME)
+    }
+
+    return this.handleRequest({
+      url: `/domains/${name}`,
+      method: 'delete'
+    })
+  },
+
+  /**
+   * Returns an array of all certificates.
+   * @return {Promise}
+   * @param  {String} [cn]     Common name
    * @see https://zeit.co/api#user-aliases
    */
-  getAliases: function getAliases(id) {
+  getCertificates(cn) {
+    let url = '/certs'
+
+    if (cn) {
+      url += `/${cn}`
+    }
+
     return this.handleRequest({
-      url: `/deployments/${id}/aliases`,
+      url,
+      method: 'get'
+    }, 'certs')
+  },
+
+  /**
+   * Creates a new certificate for a domain registered to the user.
+   * @return {Promise}
+   * @param  {String} cn Common name
+   */
+  createCertificate(cn) {
+    if (typeof cn !== 'string') {
+      return this.handleError(ERROR.MISSING_CN, cn)
+    }
+
+    return this.handleRequest({
+      url: '/certs',
+      method: 'post',
+      body: {
+        domains: [cn]
+      }
+    })
+  },
+
+  /**
+   * Renews an existing certificate.
+   * @return {Promise}
+   * @param  {String} cn               Common name
+   */
+  renewCertificate(cn) {
+    if (typeof cn !== 'string') {
+      return this.handleError(ERROR.MISSING_CN, cn)
+    }
+
+    return this.handleRequest({
+      url: '/certs',
+      method: 'post',
+      body: {
+        domains: [cn],
+        renew: true
+      }
+    })
+  },
+
+  /**
+   * Replace an existing certificate.
+   * @return {Promise}
+   * @param  {String} cn               Common name
+   * @param  {String} cert             X.509 certificate
+   * @param  {String} key              Private key for the certificate
+   * @param  {String} [ca]             CA certificate chain
+   */
+  replaceCertificate(cn, cert, key, ca) {
+    return this.handleRequest({
+      url: '/certs',
+      method: 'put',
+      body: {
+        domains: [cn],
+        ca,
+        cert,
+        key
+      }
+    }, 'created')
+  },
+
+  /**
+   * Deletes a certificate.
+   * @return {Promise}
+   * @param  {String} cn               Common name
+   */
+  deleteCertificate(cn) {
+    if (typeof cn !== 'string') {
+      return this.handleError(ERROR.MISSING_CN, cn)
+    }
+
+    return this.handleRequest({
+      url: `/certs/${cn}`,
+      method: 'delete'
+    })
+  },
+
+  /**
+   * Returns an array with all aliases.
+   * @return {Promise}
+   * @param  {String} [id]     ID of deployment
+   * @see https://zeit.co/api#user-aliases
+   */
+  getAliases(id) {
+    let url = '/aliases'
+
+    if (id) {
+      url = `/deployments/${id}/aliases`
+    }
+
+    return this.handleRequest({
+      url,
       method: 'get'
     }, 'aliases')
   },
 
   /**
    * Creates an alias for the given deployment.
-   * @return {Promise} resolves with `(data)`
+   * @return {Promise}
    * @param  {String} id     ID of deployment
    * @param  {String} alias     Hostname or custom url for the alias
    * @see https://zeit.co/api#create-alias
    */
-  createAlias: function createAlias(id, alias) {
+  createAlias(id, alias) {
     if (!id) {
       return this.handleError(ERROR.MISSING_ID)
     }
@@ -254,7 +403,7 @@ Now.prototype = {
     return this.handleRequest({
       url: `/deployments/${id}/aliases`,
       method: 'post',
-      data: {
+      body: {
         alias
       }
     })
@@ -262,11 +411,11 @@ Now.prototype = {
 
   /**
    * Deletes an alias and returns a status.
-   * @return {Promise} resolves with `(status)`
+   * @return {Promise}
    * @param  {String} id     ID of alias
    * @see https://zeit.co/api#delete-user-aliases
    */
-  deleteAlias: function deleteAlias(id) {
+  deleteAlias(id) {
     if (!id) {
       return this.handleError(ERROR.MISSING_ID)
     }
@@ -279,11 +428,10 @@ Now.prototype = {
 
   /**
    * Returns an array with all secrets.
-   * @return {Promise} resolves with `(secrets)`
-   * @param  {String} [id]     ID of deployment
+   * @return {Promise}
    * @see https://zeit.co/api#get-now-secrets
    */
-  getSecrets: function getSecrets() {
+  getSecrets() {
     return this.handleRequest({
       url: '/secrets',
       method: 'get'
@@ -292,12 +440,12 @@ Now.prototype = {
 
   /**
    * Creates a secret and returns its ID.
-   * @return {Promise} resolves with `(data)`
+   * @return {Promise}
    * @param  {String} name     name for the secret
    * @param  {String} value     value for the secret
    * @see https://zeit.co/api#post-now-secrets
    */
-  createSecret: function createSecret(name, value) {
+  createSecret(name, value) {
     if (!name) {
       return this.handleError(ERROR.MISSING_NAME)
     }
@@ -309,7 +457,7 @@ Now.prototype = {
     return this.handleRequest({
       url: '/secrets',
       method: 'post',
-      data: {
+      body: {
         name,
         value
       }
@@ -318,12 +466,12 @@ Now.prototype = {
 
   /**
    * Changes the name of the given secret and returns its ID and name.
-   * @return {Promise} resolves with `(data)`
+   * @return {Promise}
    * @param  {String} id     id or name of the secret
    * @param  {String} name     new name for the secret
    * @see https://zeit.co/api#patch-now-secrets
    */
-  renameSecret: function renameSecret(id, name) {
+  renameSecret(id, name) {
     if (!id) {
       return this.handleError(ERROR.MISSING_ID)
     }
@@ -335,7 +483,7 @@ Now.prototype = {
     return this.handleRequest({
       url: `/secrets/${id}`,
       method: 'patch',
-      data: {
+      body: {
         name
       }
     })
@@ -343,11 +491,11 @@ Now.prototype = {
 
   /**
    * Deletes a secret and returns its ID.
-   * @return {Promise} resolves with `(status)`
+   * @return {Promise}
    * @param  {String} id     ID or name of the secret
-   * @see https://zeit.co/api#delete-user-aliases
+   * @see https://zeit.co/api#delete-now-secrets
    */
-  deleteSecret: function deleteSecret(id) {
+  deleteSecret(id) {
     if (!id) {
       return this.handleError(ERROR.MISSING_ID)
     }

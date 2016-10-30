@@ -1,5 +1,5 @@
 const chai = require('chai')
-const Now = require('../dist/now')
+const Now = require('../dist')
 
 const should = chai.should()
 
@@ -9,7 +9,7 @@ if (!TOKEN) {
   throw new Error('now token not provided')
 }
 
-describe('Now', function tests() {
+describe('Now', function () {
   this.timeout(60000)
 
   const now = new Now(TOKEN)
@@ -50,11 +50,13 @@ describe('Now', function tests() {
 
   it('should return error on timeout (and other network errors)', done => {
     const nowWithShortTimeout = new Now(TOKEN)
-    nowWithShortTimeout.axios.defaults.timeout = 1
+    nowWithShortTimeout.request = nowWithShortTimeout.request.defaults({
+      timeout: 1
+    })
     nowWithShortTimeout.getDeployments().then(() => {
       throw new Error('promise should be rejected due to timeout')
     }).catch(err => {
-      err.should.be.a('string')
+      should.exist(err)
       done()
     })
   })
