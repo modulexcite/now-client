@@ -166,7 +166,7 @@ Returns the content of a file either as string or object, depending on the filet
 
 <a name="Now+getDomains"></a>
 
-## now.getDomains([callback])] ⇒ <code>Promise</code>
+### now.getDomains([callback])] ⇒ <code>Promise</code>
 Returns an array with all domain names and related aliases.
 
 **Kind**: instance method of <code>[Now](#Now)</code>
@@ -178,7 +178,7 @@ Returns an array with all domain names and related aliases.
 
 <a name="Now+addDomain"></a>
 
-## now.addDomain(domain, [callback])] ⇒ <code>Promise</code>
+### now.addDomain(domain, [callback])] ⇒ <code>Promise</code>
 Adds a new domain and returns its data.
 
 **Kind**: instance method of <code>[Now](#Now)</code>
@@ -191,7 +191,7 @@ Adds a new domain and returns its data.
 
 <a name="Now+deleteDomain"></a>
 
-## now.deleteDomain(name, [callback])] ⇒ <code>Promise</code>
+### now.deleteDomain(name, [callback])] ⇒ <code>Promise</code>
 Deletes a domain name.
 
 **Kind**: instance method of <code>[Now](#Now)</code>
@@ -205,7 +205,7 @@ Deletes a domain name.
 <a name="Now+getCertificates"></a>
 Returns an array of all certificates.
 
-## now.getCertificates([cn], [callback])] ⇒ <code>Promise</code>
+### now.getCertificates([cn], [callback])] ⇒ <code>Promise</code>
 Returns an array of all certificates.
 
 **Kind**: instance method of <code>[Now](#Now)</code>
@@ -218,7 +218,7 @@ Returns an array of all certificates.
 
 <a name="Now+createCertificate"></a>
 
-## now.createCertificate(cn, [callback])] ⇒ <code>Promise</code>
+### now.createCertificate(cn, [callback])] ⇒ <code>Promise</code>
 Creates a new certificate for a domain registered to the user.
 
 **Kind**: instance method of <code>[Now](#Now)</code>
@@ -231,7 +231,7 @@ Creates a new certificate for a domain registered to the user.
 
 <a name="Now+renewCertificate"></a>
 
-## now.renewCertificate(cn, [callback])] ⇒ <code>Promise</code>
+### now.renewCertificate(cn, [callback])] ⇒ <code>Promise</code>
 Renews an existing certificate.
 
 **Kind**: instance method of <code>[Now](#Now)</code>
@@ -244,7 +244,7 @@ Renews an existing certificate.
 
 <a name="Now+replaceCertificate"></a>
 
-## now.replaceCertificate(cn, cert, key, [ca], [callback])] ⇒ <code>Promise</code>
+### now.replaceCertificate(cn, cert, key, [ca], [callback])] ⇒ <code>Promise</code>
 Replace an existing certificate.
 
 **Kind**: instance method of <code>[Now](#Now)</code>
@@ -260,7 +260,7 @@ Replace an existing certificate.
 
 <a name="Now+deleteCertificate"></a>
 
-## now.deleteCertificate(cn, [callback])] ⇒ <code>Promise</code>
+### now.deleteCertificate(cn, [callback])] ⇒ <code>Promise</code>
 Deletes a certificate.
 
 **Kind**: instance method of <code>[Now](#Now)</code>
